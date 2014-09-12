@@ -59,7 +59,17 @@ def tokenize_file(file_name):
                 while i < len(S) and S[i] in QUOT and S[i] == S[start]:
                     i = i + 1
                 toks.append(S[start:i])
-                start = i                
+                start = i
+            elif S[i] == '%' and (i == 0 or S[i - 1] == '\n'):
+                if S.startswith("% BEGIN IGNORE CONVERT", i):
+                    x = S.find("% END IGNORE CONVERT", i)
+                    assert x >= 0
+                    i = x
+                else:
+                    while i < len(S) and S[i] != '\n':
+                        i = i + 1
+                    i = i + 1
+                start = i
             else:
                 i = i + 1
     return toks
@@ -172,6 +182,13 @@ def convert_to_twiki(toks):
                         i = i + 1
                 else:
                     i = i + 1
+            elif toks[i] == '[' and i > 0 and not toks[i-1].startswith("\\"):
+                # A regular [] literal.
+                sys.stdout.write(toks[i])
+                i = i + 1
+            elif toks[i] == ']' and (len(stack) == 0 or stack[-1][0] != '['):
+                sys.stdout.write(toks[i])
+                i = i + 1
             elif toks[i] in SYMS:
                 if toks[i] == '{':
                     stack.append((toks[i], None))
